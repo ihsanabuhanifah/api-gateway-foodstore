@@ -1,0 +1,84 @@
+const { response } = require("../../app");
+const Tag = require("./model");
+
+async function store(req, res, next) {
+  try {
+    let payload = req.body;
+    let tag = new Tag(payload);
+
+    await tag.save();
+    return res.json({
+      status: "success",
+      message: "Tag berhasil di buat",
+      data: tag,
+    });
+  } catch (err) {
+    if (err && err.name === "ValidationError") {
+      return res.json({
+        error: 1,
+        message: err.message,
+        fields: err.errors,
+      });
+    }
+
+    next(err);
+  }
+}
+
+async function index(req, res, next) {
+  try {
+    let { limit = 2, skip = 0 } = req.query;
+    let tag = await Tag.find().limit(parseFloat(limit)).skip(parseFloat(skip));
+    return res.json({
+      message: "success",
+      pagination: {
+        perpage: limit,
+        total_data: tag.length,
+      },
+      data: tag,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+async function update(req, res, next) {
+  try {
+    let payload = req.body;
+    let tag = await Tag.findOneAndUpdate({ _id: req.params.id }, payload, {
+      new: true,
+      runValidators: true,
+    });
+    return res.json({
+        status: "success",
+        message: "Tag berhasil di update",
+      });
+  } catch (err) {
+    if (err && err.name === "ValidationError") {
+      return res.json({
+        error: 1,
+        message: err.message,
+        fields: err.errors,
+      });
+    }
+
+    next(err);
+  }
+}
+
+async function destroy(req, res, next) {
+  try {
+    let tag = await Tag.findOneAndDelete({ _id: req.params.id });
+    return res.json({
+        status: "success",
+        message: "Tag berhasil di hapus",
+      });
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports = {
+  store,
+  update,
+  index,
+  destroy
+};
